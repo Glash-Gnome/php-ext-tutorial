@@ -30,7 +30,7 @@
 #include "node.h"
 
 extern HashTable         classes;
-extern zend_module_entry gtk_module_entry;
+extern zend_module_entry sample_module_entry;
 
 
 zend_class_entry     *php_sample_node_class_entry;
@@ -120,30 +120,13 @@ php_sample_node_get_debug_info(zval *object, int *is_temp) /* {{{ */
 
 
     zval data; ZVAL_COPY(&data, &obj->data);
-    zend_hash_str_update(debug_info, "data", 4, &data);
-
+    zend_hash_str_update(debug_info, "data", sizeof("data")-1, &data);
 
     zval child; ZVAL_SET_PHP_SAMPLE_NODE(&child, obj->child);
-    /*if(obj->child==NULL) {
-        ZVAL_NULL(&child);
-    } else {
-        ZVAL_OBJ(&child, &obj->child->std);
-        GC_REFCOUNT(&obj->child->std)++;
-    }*/
-    zend_hash_str_update(debug_info, "child", 5, &child);
-
-
-
+    zend_hash_str_update(debug_info, "child", sizeof("child")-1, &child);
 
     zval parent; ZVAL_SET_PHP_SAMPLE_NODE(&parent, obj->parent);
-    /*
-    if(obj->parent==NULL) {
-        ZVAL_NULL(&parent);
-    } else {
-        ZVAL_OBJ(&parent, &obj->parent->std);
-        GC_REFCOUNT(&obj->parent->std)++;
-    }*/
-    zend_hash_str_update(debug_info, "parent", 6, &parent);
+    zend_hash_str_update(debug_info, "parent", sizeof("parent")-1, &parent);
 
     return debug_info;
 }
@@ -191,19 +174,10 @@ php_sample_node_get_handlers()
 zend_class_entry*
 php_sample_node_class_init(zend_class_entry *ce) {
     php_sample_node_get_handlers();
-    //INIT_NS_CLASS_ENTRY((*ce), "Gnome\\G", "GList", php_sample_node_methods);
-    //INIT_NS_CLASS_ENTRY((*ce), "", "Node", php_sample_node_methods);
+    //INIT_NS_CLASS_ENTRY((*ce), "Sample", "Node", php_sample_node_methods);
     INIT_CLASS_ENTRY((*ce), "Node", php_sample_node_methods);
     ce->create_object = php_sample_node_create_object;
-    //ce->serialize;
     php_sample_node_class_entry = zend_register_internal_class_ex(ce, NULL);
-    /*
-    zend_hash_init(&php_sample_node_prop_handlers, 0, NULL, php_sample_node_dtor_prop_handler, 1);
-    php_sample_node_register_prop_handler(&php_sample_node_prop_handlers, "prev", sizeof("prev")-1, php_sample_node_read_prev, php_sample_node_write_prev);
-    php_sample_node_register_prop_handler(&php_sample_node_prop_handlers, "data", sizeof("data")-1, php_sample_node_read_data, php_sample_node_write_data);
-    php_sample_node_register_prop_handler(&php_sample_node_prop_handlers, "next", sizeof("next")-1, php_sample_node_read_next, php_sample_node_write_next);
-    zend_hash_add_ptr(&classes, ce->name, &php_sample_node_prop_handlers);
-    */
 
     return php_sample_node_class_entry;
 }/*}}} */
@@ -273,16 +247,8 @@ php_sample_node_dump_zobj(zend_object *obj, int tab) {
     char *t = malloc(50);
     sprintf(t, "%*.s", tab*4, "");
 
-    /*
-    zval rv;
-    zval zThis; ZVAL_OBJ(&zThis, obj);
-    zval *name = zend_read_property(php_sample_node_class_entry, &zThis, "name", sizeof("name")-1, 0, &rv);
-    char *tmp_name = php_sample_node_dump_zval(name, 0);
-    len += strlen(tmp_name);
-    */
-    //char *tmp_name = strdup(node->ptr);
     char *tmp_name = php_sample_node_dump_zval(&node->data, 0);
-
+    len += strlen(tmp_name);
 
     char *tmp_child;
     if (node->child==NULL) {
@@ -330,13 +296,11 @@ php_sample_node_dump_zval(zval *data, int tab) {
     } else if (Z_TYPE_P(data)==IS_STRING) {
         char *str_val = NULL;
         str_val = php_sample_node_dump_zend_string(data->value.str);
-        //int size = strlen("Hello World !");
         int size = strlen(str_val)+60;
         str = malloc(size);
         sprintf(str, "\e[2;34mzval\e[0;m(\e[2;35m%d\e[0;m){ %s}", data->value.counted->gc.refcount, str_val);
         free(str_val);
     } else if (Z_TYPE_P(data)==IS_LONG) {
-        //str = g_strdup_printf("%ld", data->value.lval);
         str = malloc(80);
         sprintf(str, "\e[2;34mzval\e[0;m(\e[2;35m%d\e[0;m){ %ld}", data->value.counted->gc.refcount, data->value.lval);
     } else if (Z_TYPE_P(data)==IS_OBJECT && data->value.obj->ce==php_sample_node_class_entry) {
@@ -350,7 +314,6 @@ php_sample_node_dump_zval(zval *data, int tab) {
                 tmp_parent);
         free(tmp_parent);
     } else {
-        //str = g_strdup_printf("%ld", data->value.lval);
         str = malloc(32);
         sprintf(str, "%d", Z_TYPE_P(data));
     }
